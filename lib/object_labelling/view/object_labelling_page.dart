@@ -6,10 +6,14 @@ class ObjectLabellingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create:
-          (context) => ObjectLabellingCubit(mlMediaService: MLMediaService()),
-      child: const ObjectLabellingView(),
+    return MLMediaProvider(
+      child: BlocProvider(
+        create:
+            (context) => ObjectLabellingCubit(
+              mlMediaCubit: context.read<MLMediaCubit>(),
+            ),
+        child: const ObjectLabellingView(),
+      ),
     );
   }
 }

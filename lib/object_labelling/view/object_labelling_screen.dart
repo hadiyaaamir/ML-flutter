@@ -28,11 +28,11 @@ class ObjectLabellingView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Mode Toggle
-                _ModeToggle(),
+                _ObjectLabellingModeToggle(),
                 SizedBox(height: 16),
 
                 // Status Card
-                _StatusCard(),
+                _ObjectLabellingStatusCard(),
                 SizedBox(height: 16),
 
                 // Live Camera View or Action Buttons
@@ -40,7 +40,7 @@ class ObjectLabellingView extends StatelessWidget {
                 SizedBox(height: 16),
 
                 // Image Display (for static mode)
-                _ImageDisplay(),
+                _ObjectLabellingImageDisplay(),
 
                 // Labels Display
                 _LabelsDisplay(),
@@ -53,8 +53,9 @@ class ObjectLabellingView extends StatelessWidget {
   }
 }
 
-class _ModeToggle extends StatelessWidget {
-  const _ModeToggle();
+/// Custom mode toggle that handles object labelling specific logic
+class _ObjectLabellingModeToggle extends StatelessWidget {
+  const _ObjectLabellingModeToggle();
 
   @override
   Widget build(BuildContext context) {
@@ -77,29 +78,49 @@ class _ModeToggle extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: _ModeButton(
-                        icon: Icons.photo_camera,
-                        label: 'Static Image',
-                        isSelected: state.mode == ObjectLabellingMode.static,
+                      child: ElevatedButton.icon(
                         onPressed:
                             isLoading
                                 ? null
                                 : () => cubit.switchMode(
                                   ObjectLabellingMode.static,
                                 ),
+                        icon: const Icon(Icons.photo_camera),
+                        label: const Text('Static Image'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor:
+                              state.mode == ObjectLabellingMode.static
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                          foregroundColor:
+                              state.mode == ObjectLabellingMode.static
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : null,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _ModeButton(
-                        icon: Icons.videocam,
-                        label: 'Live Camera',
-                        isSelected: state.mode == ObjectLabellingMode.live,
+                      child: ElevatedButton.icon(
                         onPressed:
                             isLoading
                                 ? null
                                 : () =>
                                     cubit.switchMode(ObjectLabellingMode.live),
+                        icon: const Icon(Icons.videocam),
+                        label: const Text('Live Camera'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor:
+                              state.mode == ObjectLabellingMode.live
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                          foregroundColor:
+                              state.mode == ObjectLabellingMode.live
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : null,
+                        ),
                       ),
                     ),
                   ],
@@ -113,32 +134,39 @@ class _ModeToggle extends StatelessWidget {
   }
 }
 
-class _ModeButton extends StatelessWidget {
-  const _ModeButton({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback? onPressed;
+/// Custom status card for object labelling
+class _ObjectLabellingStatusCard extends StatelessWidget {
+  const _ObjectLabellingStatusCard();
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        backgroundColor:
-            isSelected ? Theme.of(context).colorScheme.primary : null,
-        foregroundColor:
-            isSelected ? Theme.of(context).colorScheme.onPrimary : null,
-      ),
+    return BlocBuilder<ObjectLabellingCubit, ObjectLabellingState>(
+      builder: (context, state) {
+        final config = MLStatusConfig(
+          staticResultsMessage:
+              state.labels != null && state.labels!.isNotEmpty
+                  ? 'Found ${state.labels!.length} labels'
+                  : null,
+          liveDetectingMessage:
+              state.liveCameraLabels.isNotEmpty
+                  ? 'Live detection: ${state.liveCameraLabels.length} objects found'
+                  : null,
+        );
+
+        final hasResults =
+            (state.labels != null && state.labels!.isNotEmpty) ||
+            state.liveCameraLabels.isNotEmpty;
+        final resultCount =
+            state.mode == ObjectLabellingMode.live
+                ? state.liveCameraLabels.length
+                : state.labels?.length ?? 0;
+
+        return MLStatusCard(
+          config: config,
+          hasResults: hasResults,
+          resultCount: resultCount,
+        );
+      },
     );
   }
 }
@@ -151,66 +179,42 @@ class _CameraOrActionSection extends StatelessWidget {
     return BlocBuilder<ObjectLabellingCubit, ObjectLabellingState>(
       builder: (context, state) {
         if (state.mode == ObjectLabellingMode.live) {
-          return const _LiveCameraView();
+          return const _ObjectLabellingCameraPreview();
         } else {
-          return const _ActionButtons();
+          return const _ObjectLabellingActionButtons();
         }
       },
     );
   }
 }
 
-class _LiveCameraView extends StatelessWidget {
-  const _LiveCameraView();
+/// Custom camera preview for object labelling with live detection indicator
+class _ObjectLabellingCameraPreview extends StatelessWidget {
+  const _ObjectLabellingCameraPreview();
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ObjectLabellingCubit, ObjectLabellingState>(
       builder: (context, state) {
-        final cubit = context.read<ObjectLabellingCubit>();
-
         if (!state.isLiveCameraActive) {
           return const SizedBox.shrink();
         }
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Live Camera Feed',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => cubit.switchCamera(),
-                      icon: const Icon(Icons.switch_camera),
-                      tooltip: 'Switch Camera',
-                    ),
-                  ],
+        return Column(
+          children: [
+            const MLCameraPreview(
+              title: 'Live Camera Feed',
+              showSwitchButton: true,
+            ),
+            const SizedBox(height: 8),
+            // Live detection status indicator
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  constraints: const BoxConstraints(maxHeight: 400),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: const _CameraPreviewWidget(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
+                child: Row(
                   children: [
                     Icon(
                       state.liveCameraLabels.isNotEmpty
@@ -234,125 +238,41 @@ class _LiveCameraView extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         );
       },
     );
   }
 }
 
-class _CameraPreviewWidget extends StatefulWidget {
-  const _CameraPreviewWidget();
+/// Custom action buttons for object labelling
+class _ObjectLabellingActionButtons extends StatelessWidget {
+  const _ObjectLabellingActionButtons();
 
-  @override
-  State<_CameraPreviewWidget> createState() => _CameraPreviewWidgetState();
-}
-
-class _CameraPreviewWidgetState extends State<_CameraPreviewWidget> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ObjectLabellingCubit, ObjectLabellingState>(
       builder: (context, state) {
-        final cubit = context.read<ObjectLabellingCubit>();
-        final cameraController = cubit.cameraController;
+        final hasResults = state.labels != null && state.labels!.isNotEmpty;
 
-        if (cameraController == null) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 8),
-                Text('Initializing camera...'),
-              ],
-            ),
-          );
-        }
-
-        if (!cameraController.value.isInitialized) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 8),
-                Text('Setting up camera...'),
-              ],
-            ),
-          );
-        }
-
-        // Wrap CameraPreview in error handling
-        return Builder(
-          builder: (context) {
-            try {
-              // Double-check that controller is still valid before building preview
-              if (cameraController.value.isInitialized) {
-                // Get the camera's aspect ratio to prevent squishing
-                final aspectRatio = cameraController.value.aspectRatio;
-
-                return AspectRatio(
-                  aspectRatio: aspectRatio,
-                  child: OverflowBox(
-                    alignment: Alignment.center,
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: cameraController.value.previewSize?.height ?? 1,
-                        height: cameraController.value.previewSize?.width ?? 1,
-                        child: CameraPreview(cameraController),
-                      ),
-                    ),
-                  ),
-                );
-              } else {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.camera_alt_outlined,
-                        size: 48,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(height: 8),
-                      Text('Camera not ready'),
-                    ],
-                  ),
-                );
-              }
-            } catch (e) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.camera_alt_outlined,
-                      size: 48,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Camera error: ${e.toString()}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed:
-                          () => cubit.switchMode(ObjectLabellingMode.live),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
-            }
-          },
+        return MLActionButtons(
+          hasResults: hasResults,
+          retryButtonText: 'Try Another Image',
         );
       },
     );
+  }
+}
+
+/// Custom image display for object labelling
+class _ObjectLabellingImageDisplay extends StatelessWidget {
+  const _ObjectLabellingImageDisplay();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MLImageDisplay(title: 'Captured Image');
   }
 }
 
@@ -388,225 +308,6 @@ class _ClearResultsButton extends StatelessWidget {
   }
 }
 
-class _StatusCard extends StatelessWidget {
-  const _StatusCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ObjectLabellingCubit, ObjectLabellingState>(
-      builder: (context, state) {
-        String statusText;
-        Color statusColor;
-        IconData statusIcon;
-        bool showLoading = false;
-
-        if (state.mode == ObjectLabellingMode.live) {
-          // Live camera mode status
-          if (state.objectLabellingDataState.isLoading) {
-            statusText = 'Starting live camera...';
-            statusColor = Colors.orange;
-            statusIcon = Icons.videocam;
-            showLoading = true;
-          } else if (state.isLiveCameraActive) {
-            if (state.liveCameraLabels.isNotEmpty) {
-              statusText =
-                  'Live detection: ${state.liveCameraLabels.length} objects found';
-              statusColor = Colors.green;
-              statusIcon = Icons.visibility;
-            } else {
-              statusText = 'Live camera active - Looking for objects...';
-              statusColor = Colors.blue;
-              statusIcon = Icons.videocam;
-            }
-          } else if (state.objectLabellingDataState.isFailure) {
-            statusText =
-                state.objectLabellingDataState.errorMessage ?? 'Camera error';
-            statusColor = Colors.red;
-            statusIcon = Icons.error;
-          } else {
-            statusText = 'Ready to start live detection';
-            statusColor = Colors.blue;
-            statusIcon = Icons.videocam;
-          }
-        } else {
-          // Static image mode status
-          if (state.objectLabellingDataState.isInitial) {
-            statusText = 'Ready to capture or select an image';
-            statusColor = Colors.blue;
-            statusIcon = Icons.camera_alt;
-          } else if (state.objectLabellingDataState.isLoading) {
-            statusText = 'Processing...';
-            statusColor = Colors.orange;
-            statusIcon = Icons.hourglass_empty;
-            showLoading = true;
-          } else if (state.objectLabellingDataState.isFailure) {
-            statusText =
-                state.objectLabellingDataState.errorMessage ?? 'Error occurred';
-            statusColor = Colors.red;
-            statusIcon = Icons.error;
-          } else if (state.labels != null && state.labels!.isNotEmpty) {
-            statusText = 'Found ${state.labels!.length} labels';
-            statusColor = Colors.purple;
-            statusIcon = Icons.label;
-          } else if (state.image != null) {
-            statusText = 'Image captured! Processing...';
-            statusColor = Colors.green;
-            statusIcon = Icons.analytics;
-            showLoading = true;
-          } else {
-            statusText = 'Ready to start';
-            statusColor = Colors.blue;
-            statusIcon = Icons.camera_alt;
-          }
-        }
-
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Icon(statusIcon, color: statusColor, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    statusText,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: statusColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                if (showLoading)
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ActionButtons extends StatelessWidget {
-  const _ActionButtons();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ObjectLabellingCubit, ObjectLabellingState>(
-      builder: (context, state) {
-        final cubit = context.read<ObjectLabellingCubit>();
-        final isLoading = state.objectLabellingDataState.isLoading;
-        final hasResults = state.labels != null && state.labels!.isNotEmpty;
-
-        return Column(
-          children: [
-            // Capture/Select Image Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: isLoading ? null : () => cubit.captureImage(),
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Capture Image'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed:
-                        isLoading ? null : () => cubit.pickImageFromGallery(),
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Select Image'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Try Again Button (only show if we have results)
-            if (hasResults) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: isLoading ? null : () => cubit.clearResults(),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Try Another Image'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ImageDisplay extends StatelessWidget {
-  const _ImageDisplay();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ObjectLabellingCubit, ObjectLabellingState>(
-      builder: (context, state) {
-        // Only show image in static mode
-        if (state.mode == ObjectLabellingMode.live || state.image == null) {
-          return const SizedBox.shrink();
-        }
-
-        return Column(
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Captured Image',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxHeight: 300),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(state.image!, fit: BoxFit.contain),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        );
-      },
-    );
-  }
-}
-
 class _LabelsDisplay extends StatelessWidget {
   const _LabelsDisplay();
 
@@ -622,7 +323,9 @@ class _LabelsDisplay extends StatelessWidget {
 
         if (labels == null || labels.isEmpty) {
           // Only show "no objects" message if we're not in live mode or if live mode has no labels
-          if (state.mode == ObjectLabellingMode.static && state.image != null) {
+          if (state.mode == ObjectLabellingMode.static &&
+              state.image != null &&
+              state.objectLabellingDataState.isNotInitial) {
             return Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),

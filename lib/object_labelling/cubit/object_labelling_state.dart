@@ -30,8 +30,8 @@ class ObjectLabellingState extends Equatable {
 
   ObjectLabellingState copyWith({
     File? image,
-    List<LabelResult>? labels,
-    DateTime? timestamp,
+    List<LabelResult>? Function()? labels,
+    DateTime? Function()? timestamp,
     ObjectLabellingDataState? objectLabellingDataState,
     ObjectLabellingState? previousState,
     ObjectLabellingMode? mode,
@@ -40,8 +40,8 @@ class ObjectLabellingState extends Equatable {
   }) {
     return ObjectLabellingState(
       image: image ?? this.image,
-      labels: labels ?? this.labels,
-      timestamp: timestamp ?? this.timestamp,
+      labels: labels != null ? labels() : this.labels,
+      timestamp: timestamp != null ? timestamp() : this.timestamp,
       objectLabellingDataState:
           objectLabellingDataState ?? this.objectLabellingDataState,
       previousState: previousState ?? this.previousState,

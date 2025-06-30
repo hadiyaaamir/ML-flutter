@@ -8,32 +8,32 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:ml_flutter/common/common.dart';
 import 'package:ml_flutter/object_labelling/object_labelling.dart';
-import 'package:ml_flutter/services/services.dart';
+import 'package:ml_flutter/ml_media/ml_media.dart';
 
 part 'object_labelling_state.dart';
 
 /// Cubit for managing object labelling functionality
 class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
-  final MLMediaService _mlMediaService;
+  final MLMediaCubit _mlMediaCubit;
   late final ImageLabeler _imageLabeler;
   bool _isInitialized = false;
   StreamSubscription<CameraImage>? _cameraStreamSubscription;
+  StreamSubscription<MLMediaState>? _mlMediaStateSubscription;
   Timer? _processingTimer;
   bool _isProcessingFrame = false;
-  int _frameCount = 0; // Add frame counter for debugging
+  int _frameCount = 0;
 
-  ObjectLabellingCubit({required MLMediaService mlMediaService})
-    : _mlMediaService = mlMediaService,
+  ObjectLabellingCubit({required MLMediaCubit mlMediaCubit})
+    : _mlMediaCubit = mlMediaCubit,
       super(const ObjectLabellingState()) {
     _initializeServices();
+    _listenToMLMediaChanges();
   }
 
   /// Initialize ML services and image labeler
   Future<void> _initializeServices() async {
     try {
       emit(state.copyWith(objectLabellingDataState: DataState.loading()));
-
-      await _mlMediaService.initialize();
 
       // Initialize ImageLabeler with optimized settings for real-time processing
       _imageLabeler = ImageLabeler(
@@ -55,7 +55,50 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
     }
   }
 
-  /// Capture image from camera
+  /// Listen to ML media state changes and process images automatically
+  void _listenToMLMediaChanges() {
+    _mlMediaStateSubscription = _mlMediaCubit.stream.listen((mlMediaState) {
+      // Auto-process image when a new image is captured/selected
+      if (mlMediaState.image != null &&
+          mlMediaState.image != state.image &&
+          mlMediaState.mode == MLMediaMode.static) {
+        processImage(mlMediaState.image!);
+      }
+
+      // Handle live camera mode changes
+      if (mlMediaState.mode == MLMediaMode.live &&
+          mlMediaState.isLiveCameraActive &&
+          !state.isLiveCameraActive) {
+        _startLiveCameraProcessing();
+      } else if (mlMediaState.mode == MLMediaMode.static ||
+          !mlMediaState.isLiveCameraActive) {
+        _stopLiveCameraProcessing();
+      }
+
+      // Check if image was cleared (went from having an image to null)
+      final imageCleared = state.image != null && mlMediaState.image == null;
+
+      // Update our state to reflect ML media state
+      emit(
+        state.copyWith(
+          mode:
+              mlMediaState.mode == MLMediaMode.live
+                  ? ObjectLabellingMode.live
+                  : ObjectLabellingMode.static,
+          isLiveCameraActive: mlMediaState.isLiveCameraActive,
+          image: mlMediaState.image,
+          labels: imageCleared ? () => null : null,
+          timestamp: imageCleared ? () => null : null,
+          objectLabellingDataState:
+              imageCleared
+                  ? DataState.initial()
+                  : state.objectLabellingDataState,
+        ),
+      );
+    });
+  }
+
+  /// Capture image from camera (delegates to ML media cubit)
   Future<void> captureImage() async {
     if (!_isInitialized) {
       emit(
@@ -68,38 +111,10 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
       return;
     }
 
-    try {
-      emit(
-        state.copyWith(
-          objectLabellingDataState: state.objectLabellingDataState.toLoading(),
-        ),
-      );
-
-      final image = await _mlMediaService.captureImageFromCamera();
-
-      if (image != null) {
-        await processImage(image);
-      } else {
-        emit(
-          state.copyWith(
-            objectLabellingDataState: state.objectLabellingDataState.toFailure(
-              error: Exception('Failed to capture image'),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      emit(
-        state.copyWith(
-          objectLabellingDataState: state.objectLabellingDataState.toFailure(
-            error: e,
-          ),
-        ),
-      );
-    }
+    await _mlMediaCubit.captureImage();
   }
 
-  /// Pick image from gallery
+  /// Pick image from gallery (delegates to ML media cubit)
   Future<void> pickImageFromGallery() async {
     if (!_isInitialized) {
       emit(
@@ -112,36 +127,7 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
       return;
     }
 
-    try {
-      emit(
-        state.copyWith(
-          objectLabellingDataState: state.objectLabellingDataState.toLoading(),
-        ),
-      );
-
-      final image = await _mlMediaService.pickImageFromGallery();
-
-      if (image != null) {
-        // Automatically process the image after selection
-        await processImage(image);
-      } else {
-        emit(
-          state.copyWith(
-            objectLabellingDataState: state.objectLabellingDataState.toFailure(
-              error: Exception('No image selected'),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      emit(
-        state.copyWith(
-          objectLabellingDataState: state.objectLabellingDataState.toFailure(
-            error: e,
-          ),
-        ),
-      );
-    }
+    await _mlMediaCubit.pickImageFromGallery();
   }
 
   /// Process the captured/selected image to detect labels
@@ -180,8 +166,8 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
       emit(
         state.copyWith(
           image: imageFile,
-          labels: labelResults,
-          timestamp: DateTime.now(),
+          labels: () => labelResults,
+          timestamp: () => DateTime.now(),
           objectLabellingDataState: state.objectLabellingDataState.toLoaded(
             data: labelResults,
           ),
@@ -201,63 +187,27 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
 
   /// Clear current results and go back to initial state
   void clearResults() {
+    _mlMediaCubit.clearResults();
     emit(ObjectLabellingState(mode: state.mode));
   }
 
-  /// Switch between static and live camera modes
+  /// Switch between static and live camera modes (delegates to ML media cubit)
   Future<void> switchMode(ObjectLabellingMode mode) async {
-    if (state.mode == mode) return;
+    final mlMediaMode =
+        mode == ObjectLabellingMode.live
+            ? MLMediaMode.live
+            : MLMediaMode.static;
 
-    try {
-      if (mode == ObjectLabellingMode.live) {
-        await startLiveCamera();
-      } else {
-        await stopLiveCamera();
-        emit(
-          state.copyWith(
-            mode: ObjectLabellingMode.static,
-            isLiveCameraActive: false,
-            liveCameraLabels: [],
-          ),
-        );
-      }
-    } catch (e) {
-      emit(
-        state.copyWith(
-          objectLabellingDataState: state.objectLabellingDataState.toFailure(
-            error: e,
-          ),
-        ),
-      );
-    }
+    await _mlMediaCubit.switchMode(mlMediaMode);
   }
 
-  /// Start live camera for real-time object detection
-  Future<void> startLiveCamera() async {
-    if (!_isInitialized) {
-      emit(
-        state.copyWith(
-          objectLabellingDataState: state.objectLabellingDataState.toFailure(
-            error: Exception('Services not initialized'),
-          ),
-        ),
-      );
-      return;
-    }
+  /// Start live camera processing
+  void _startLiveCameraProcessing() async {
+    if (!_isInitialized) return;
 
     try {
-      emit(
-        state.copyWith(
-          objectLabellingDataState: state.objectLabellingDataState.toLoading(),
-          mode: ObjectLabellingMode.live,
-        ),
-      );
-
-      // Start ML-optimized camera for object detection
-      await _mlMediaService.startMLObjectDetection();
-
       // Start image stream and process frames
-      final imageStream = _mlMediaService.getCameraStream();
+      final imageStream = _mlMediaCubit.getCameraStream();
 
       _cameraStreamSubscription = imageStream.listen(
         (cameraImage) {
@@ -267,14 +217,6 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
           // Handle stream errors silently or emit error state if needed
         },
       );
-
-      emit(
-        state.copyWith(
-          mode: ObjectLabellingMode.live,
-          isLiveCameraActive: true,
-          objectLabellingDataState: state.objectLabellingDataState.toLoaded(),
-        ),
-      );
     } catch (e) {
       emit(
         state.copyWith(
@@ -286,8 +228,8 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
     }
   }
 
-  /// Stop live camera
-  Future<void> stopLiveCamera() async {
+  /// Stop live camera processing
+  void _stopLiveCameraProcessing() async {
     try {
       _processingTimer?.cancel();
       _processingTimer = null;
@@ -295,15 +237,7 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
       await _cameraStreamSubscription?.cancel();
       _cameraStreamSubscription = null;
 
-      await _mlMediaService.stopLiveCamera();
-
-      emit(
-        state.copyWith(
-          mode: ObjectLabellingMode.static,
-          isLiveCameraActive: false,
-          liveCameraLabels: [],
-        ),
-      );
+      emit(state.copyWith(isLiveCameraActive: false, liveCameraLabels: []));
     } catch (e) {
       emit(
         state.copyWith(
@@ -315,7 +249,7 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
     }
   }
 
-  /// Switch camera (front/back) during live mode
+  /// Switch camera (front/back) during live mode (delegates to ML media cubit)
   Future<void> switchCamera() async {
     if (!state.isLiveCameraActive) return;
 
@@ -328,35 +262,23 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
       await _cameraStreamSubscription?.cancel();
       _cameraStreamSubscription = null;
 
-      // Switch camera using the service
-      await _mlMediaService.switchCamera();
+      // Switch camera using the ML media cubit
+      await _mlMediaCubit.switchCamera();
 
       // Restart image stream if camera is still active
-      if (state.isLiveCameraActive &&
-          _mlMediaService.cameraController != null) {
-        final imageStream = _mlMediaService.getCameraStream();
+      if (state.isLiveCameraActive) {
+        final imageStream = _mlMediaCubit.getCameraStream();
         _cameraStreamSubscription = imageStream.listen(_processLiveCameraFrame);
       }
     } catch (e) {
-      // If switching fails, try to restart the camera
-      try {
-        await _restartLiveCamera();
-      } catch (restartError) {
-        emit(
-          state.copyWith(
-            objectLabellingDataState: state.objectLabellingDataState.toFailure(
-              error: Exception('Failed to switch camera: $e'),
-            ),
+      emit(
+        state.copyWith(
+          objectLabellingDataState: state.objectLabellingDataState.toFailure(
+            error: Exception('Failed to switch camera: $e'),
           ),
-        );
-      }
+        ),
+      );
     }
-  }
-
-  /// Restart live camera after an error
-  Future<void> _restartLiveCamera() async {
-    await stopLiveCamera();
-    await startLiveCamera();
   }
 
   /// Process camera frame for real-time object detection
@@ -407,7 +329,7 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
         emit(
           state.copyWith(
             liveCameraLabels: labelResults,
-            timestamp: DateTime.now(),
+            timestamp: () => DateTime.now(),
           ),
         );
       }
@@ -419,7 +341,7 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
   /// Convert CameraImage to InputImage for ML Kit processing
   InputImage? _convertCameraImageToInputImage(CameraImage cameraImage) {
     try {
-      final camera = _mlMediaService.cameraController?.description;
+      final camera = _mlMediaCubit.cameraController?.description;
       if (camera == null) {
         return null;
       }
@@ -440,7 +362,7 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
         };
 
         var rotationCompensation =
-            orientations[_mlMediaService
+            orientations[_mlMediaCubit
                 .cameraController
                 ?.value
                 .deviceOrientation];
@@ -536,22 +458,9 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
     return null;
   }
 
-  /// Get camera controller for live camera preview
+  /// Get camera controller for live camera preview (delegates to ML media cubit)
   CameraController? get cameraController {
-    final controller = _mlMediaService.cameraController;
-    if (controller == null) return null;
-
-    try {
-      // Check if controller is initialized and not disposed
-      if (controller.value.isInitialized) {
-        return controller;
-      }
-    } catch (e) {
-      // Controller might be disposed, return null
-      return null;
-    }
-
-    return null;
+    return _mlMediaCubit.cameraController;
   }
 
   @override
@@ -559,7 +468,7 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
     // Clean up live camera resources
     _processingTimer?.cancel();
     await _cameraStreamSubscription?.cancel();
-    await _mlMediaService.dispose();
+    await _mlMediaStateSubscription?.cancel();
 
     // Clean up ML Kit resources
     await _imageLabeler.close();
