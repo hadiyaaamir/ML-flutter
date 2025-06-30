@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:camera/camera.dart';
+
 import 'package:equatable/equatable.dart';
 import 'package:ml_flutter/common/common.dart';
 

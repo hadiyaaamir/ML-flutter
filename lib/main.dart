@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ml_flutter/object_labelling/object_labelling.dart';
+import 'package:ml_flutter/barcode_scanning/barcode_scanning.dart';
 
 void main() {
   runApp(const MyApp());
@@ -81,6 +82,25 @@ class MLFoundationScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ObjectLabellingPage(),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Barcode Scanner App Tile
+            _buildAppTile(
+              context,
+              icon: Icons.qr_code_scanner,
+              title: 'Barcode Scanner',
+              description: 'Scan QR codes and barcodes with live detection',
+              color: Colors.green,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BarcodeScanningPage(),
                   ),
                 );
               },
