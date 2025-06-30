@@ -201,7 +201,7 @@ class ObjectLabellingCubit extends Cubit<ObjectLabellingState> {
 
   /// Clear current results and go back to initial state
   void clearResults() {
-    emit(ObjectLabellingState());
+    emit(ObjectLabellingState(mode: state.mode));
   }
 
   /// Switch between static and live camera modes

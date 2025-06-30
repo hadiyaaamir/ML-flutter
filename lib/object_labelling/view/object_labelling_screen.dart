@@ -199,7 +199,7 @@ class _LiveCameraView extends StatelessWidget {
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
-                  height: 300,
+                  constraints: const BoxConstraints(maxHeight: 400),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(8),
@@ -290,7 +290,23 @@ class _CameraPreviewWidgetState extends State<_CameraPreviewWidget> {
             try {
               // Double-check that controller is still valid before building preview
               if (cameraController.value.isInitialized) {
-                return CameraPreview(cameraController);
+                // Get the camera's aspect ratio to prevent squishing
+                final aspectRatio = cameraController.value.aspectRatio;
+
+                return AspectRatio(
+                  aspectRatio: aspectRatio,
+                  child: OverflowBox(
+                    alignment: Alignment.center,
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: cameraController.value.previewSize?.height ?? 1,
+                        height: cameraController.value.previewSize?.width ?? 1,
+                        child: CameraPreview(cameraController),
+                      ),
+                    ),
+                  ),
+                );
               } else {
                 return const Center(
                   child: Column(
@@ -640,7 +656,7 @@ class _LabelsDisplay extends StatelessWidget {
 
         return Card(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -651,12 +667,13 @@ class _LabelsDisplay extends StatelessWidget {
                           ? Icons.visibility
                           : Icons.label,
                       color: Colors.purple,
+                      size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       modeText,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -664,19 +681,20 @@ class _LabelsDisplay extends StatelessWidget {
                     Chip(
                       label: Text('${labels.length} found'),
                       backgroundColor: Colors.purple.withValues(alpha: 0.1),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ],
                 ),
                 if (state.mode == ObjectLabellingMode.live) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.update, size: 14, color: Colors.grey.shade600),
+                      Icon(Icons.update, size: 12, color: Colors.grey.shade600),
                       const SizedBox(width: 4),
                       Text(
                         'Updates in real-time',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: Colors.grey.shade600,
                           fontStyle: FontStyle.italic,
                         ),
@@ -684,7 +702,7 @@ class _LabelsDisplay extends StatelessWidget {
                     ],
                   ),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 ...labels.map((label) => _LabelItem(label: label)),
               ],
             ),
@@ -703,56 +721,43 @@ class _LabelItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 6,
+            height: 6,
             decoration: BoxDecoration(
               color: label.isConfident() ? Colors.green : Colors.orange,
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label.label,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Confidence: ${label.confidencePercentage}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-              ],
+            child: Text(
+              label.label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color:
                   label.isConfident()
                       ? Colors.green.withValues(alpha: 0.1)
                       : Colors.orange.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               label.confidencePercentage,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: label.isConfident() ? Colors.green : Colors.orange,
               ),
