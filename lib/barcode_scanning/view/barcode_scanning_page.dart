@@ -3,6 +3,10 @@ part of 'view.dart';
 class BarcodeScanningPage extends StatelessWidget {
   const BarcodeScanningPage({super.key});
 
+  static Route<void> route() {
+    return MaterialPageRoute(builder: (context) => const BarcodeScanningPage());
+  }
+
   @override
   Widget build(BuildContext context) {
     return MLMediaProvider(

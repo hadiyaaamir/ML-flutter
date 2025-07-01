@@ -4,6 +4,10 @@ part of 'view.dart';
 class ObjectLabellingPage extends StatelessWidget {
   const ObjectLabellingPage({super.key});
 
+  static Route<void> route() {
+    return MaterialPageRoute(builder: (context) => const ObjectLabellingPage());
+  }
+
   @override
   Widget build(BuildContext context) {
     return MLMediaProvider(

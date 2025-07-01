@@ -72,36 +72,22 @@ class _Apps extends StatelessWidget {
     return Column(
       spacing: 8,
       children: [
-        // Object Labelling App Tile
+        // Object Labelling
         AppTile(
           icon: Icons.label,
           title: 'Object Labelling',
           description: 'Detect and identify objects in images using AI',
           color: Colors.purple,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ObjectLabellingPage(),
-              ),
-            );
-          },
+          onTap: () => Navigator.push(context, ObjectLabellingPage.route()),
         ),
 
-        // Barcode Scanner App Tile
+        // Barcode Scanner
         AppTile(
           icon: Icons.qr_code_scanner,
           title: 'Barcode Scanner',
           description: 'Scan QR codes and barcodes with live detection',
           color: Colors.green,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BarcodeScanningPage(),
-              ),
-            );
-          },
+          onTap: () => Navigator.push(context, BarcodeScanningPage.route()),
         ),
       ],
     );
