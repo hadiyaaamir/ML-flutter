@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ml_flutter/face_detection/view/view.dart';
 import 'package:ml_flutter/object_labelling/object_labelling.dart';
 import 'package:ml_flutter/barcode_scanning/barcode_scanning.dart';
 
@@ -88,6 +89,15 @@ class _Apps extends StatelessWidget {
           description: 'Scan QR codes and barcodes with live detection',
           color: Colors.green,
           onTap: () => Navigator.push(context, BarcodeScanningPage.route()),
+        ),
+
+        // Face Detection
+        AppTile(
+          icon: Icons.face,
+          title: 'Face Detection',
+          description: 'Detect and identify faces in images using AI',
+          color: Colors.blue,
+          onTap: () => Navigator.push(context, FaceDetectionPage.route()),
         ),
       ],
     );
