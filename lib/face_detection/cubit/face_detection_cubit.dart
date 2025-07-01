@@ -3,7 +3,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:ml_flutter/common/common.dart';
@@ -81,6 +81,17 @@ class FaceDetectionCubit extends Cubit<FaceDetectionState> {
         _stopLiveCameraProcessing();
       }
 
+      // Handle camera switching in live mode
+      // Check if camera switched by comparing timestamps and live camera state
+      if (mlMediaState.mode == MLMediaMode.live &&
+          mlMediaState.isLiveCameraActive &&
+          state.isLiveCameraActive &&
+          mlMediaState.timestamp != state.timestamp &&
+          mlMediaState.timestamp != null) {
+        // Camera was switched, clear current faces and restart processing
+        _handleCameraSwitch();
+      }
+
       // Check if image was cleared (went from having an image to null)
       final imageCleared = state.image != null && mlMediaState.image == null;
 
@@ -94,7 +105,7 @@ class FaceDetectionCubit extends Cubit<FaceDetectionState> {
           isLiveCameraActive: mlMediaState.isLiveCameraActive,
           image: () => mlMediaState.image,
           faces: imageCleared ? () => null : null,
-          timestamp: imageCleared ? () => null : null,
+          timestamp: () => mlMediaState.timestamp,
           faceDetectionDataState:
               imageCleared ? DataState.initial() : state.faceDetectionDataState,
         ),
@@ -259,27 +270,53 @@ class FaceDetectionCubit extends Cubit<FaceDetectionState> {
     }
   }
 
+  /// Handle camera switch in live mode
+  void _handleCameraSwitch() async {
+    try {
+      // Clear current faces immediately
+      emit(state.copyWith(liveCameraFaces: []));
+
+      // Cancel current processing
+      _processingTimer?.cancel();
+      _processingTimer = null;
+      _isProcessingFrame = false;
+      _frameCount = 0; // Reset frame counter
+
+      // Cancel current stream
+      await _cameraStreamSubscription?.cancel();
+      _cameraStreamSubscription = null;
+
+      // Restart camera stream with new camera
+      if (state.isLiveCameraActive) {
+        final imageStream = _mlMediaCubit.getCameraStream();
+        _cameraStreamSubscription = imageStream.listen(
+          (cameraImage) {
+            _processLiveCameraFrame(cameraImage);
+          },
+          onError: (error) {
+            // Handle stream errors silently or emit error state if needed
+          },
+        );
+      }
+    } catch (e) {
+      emit(
+        state.copyWith(
+          faceDetectionDataState: state.faceDetectionDataState.toFailure(
+            error: Exception('Failed to handle camera switch: $e'),
+          ),
+        ),
+      );
+    }
+  }
+
   /// Switch camera (front/back) during live mode (delegates to ML media cubit)
   Future<void> switchCamera() async {
     if (!state.isLiveCameraActive) return;
 
     try {
-      // Temporarily pause processing during camera switch
-      _processingTimer?.cancel();
-      _isProcessingFrame = false;
-
-      // Stop current image stream
-      await _cameraStreamSubscription?.cancel();
-      _cameraStreamSubscription = null;
-
-      // Switch camera using the ML media cubit
+      // Simply delegate to ML media cubit
+      // The _listenToMLMediaChanges will handle clearing faces and restarting stream
       await _mlMediaCubit.switchCamera();
-
-      // Restart image stream if camera is still active
-      if (state.isLiveCameraActive) {
-        final imageStream = _mlMediaCubit.getCameraStream();
-        _cameraStreamSubscription = imageStream.listen(_processLiveCameraFrame);
-      }
     } catch (e) {
       emit(
         state.copyWith(
@@ -347,27 +384,74 @@ class FaceDetectionCubit extends Cubit<FaceDetectionState> {
       final camera = _mlMediaCubit.cameraController?.description;
       if (camera == null) return null;
 
-      // Get camera rotation
-      final rotation = InputImageRotationValue.fromRawValue(
-        camera.sensorOrientation,
-      );
+      // Get image rotation using the official ML Kit approach (same as barcode scanning)
+      final sensorOrientation = camera.sensorOrientation;
+      InputImageRotation? rotation;
+
+      if (Platform.isIOS) {
+        rotation = InputImageRotationValue.fromRawValue(sensorOrientation);
+      } else if (Platform.isAndroid) {
+        // Get device orientation mappings
+        final orientations = {
+          DeviceOrientation.portraitUp: 0,
+          DeviceOrientation.landscapeLeft: 90,
+          DeviceOrientation.portraitDown: 180,
+          DeviceOrientation.landscapeRight: 270,
+        };
+
+        var rotationCompensation =
+            orientations[_mlMediaCubit
+                .cameraController
+                ?.value
+                .deviceOrientation];
+        if (rotationCompensation == null) {
+          return null;
+        }
+
+        if (camera.lensDirection == CameraLensDirection.front) {
+          // front-facing
+          rotationCompensation =
+              (sensorOrientation + rotationCompensation) % 360;
+        } else {
+          // back-facing
+          rotationCompensation =
+              (sensorOrientation - rotationCompensation + 360) % 360;
+        }
+        rotation = InputImageRotationValue.fromRawValue(rotationCompensation);
+      }
+
       if (rotation == null) return null;
 
       // Get image format
       final format = InputImageFormatValue.fromRawValue(cameraImage.format.raw);
-      if (format == null) return null;
 
-      // Create InputImage with metadata
+      // Validate format depending on platform - only supported formats:
+      // * nv21 for Android
+      // * bgra8888 for iOS
+      if (format == null ||
+          (Platform.isAndroid && format != InputImageFormat.nv21) ||
+          (Platform.isIOS && format != InputImageFormat.bgra8888)) {
+        return null;
+      }
+
+      // Since format is constrained to nv21 or bgra8888, both only have one plane
+      if (cameraImage.planes.length != 1) {
+        return null;
+      }
+
+      final plane = cameraImage.planes.first;
+
+      // Create InputImage with proper metadata
       return InputImage.fromBytes(
-        bytes: cameraImage.planes.first.bytes,
+        bytes: plane.bytes,
         metadata: InputImageMetadata(
           size: Size(
             cameraImage.width.toDouble(),
             cameraImage.height.toDouble(),
           ),
-          rotation: rotation,
-          format: format,
-          bytesPerRow: cameraImage.planes.first.bytesPerRow,
+          rotation: rotation, // used only in Android
+          format: format, // used only in iOS
+          bytesPerRow: plane.bytesPerRow, // used only in iOS
         ),
       );
     } catch (e) {

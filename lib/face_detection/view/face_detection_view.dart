@@ -24,8 +24,7 @@ class FaceDetectionView extends StatelessWidget {
                 // Live mode: filters and toggles above camera
                 if (state.mode == FaceDetectionMode.live) ...[
                   if (state.currentFaces.isNotEmpty || state.isLiveCameraActive)
-                    _FaceFilterSection(),
-                  _FaceDetectionCameraPreview(),
+                    _FaceDetectionCameraPreview(),
                 ] else ...[
                   // Static mode: action buttons, then image with toggles, then filters
                   _FaceDetectionActionButtons(),
@@ -233,6 +232,10 @@ class _FaceDetectionCameraPreview extends StatelessWidget {
                 ),
               ),
             ),
+            if (state.liveCameraFaces?.isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              _FaceFilterSection(),
+            ],
             const SizedBox(height: 8),
             // Live detection status indicator
             Card(
@@ -274,7 +277,7 @@ class _FaceDetectionCameraPreview extends StatelessWidget {
   }
 }
 
-/// Camera preview widget extracted from MLCameraPreview for custom usage
+/// Camera preview widget that reuses existing components for face detection overlay
 class _CameraPreviewWidget extends StatefulWidget {
   const _CameraPreviewWidget();
 
@@ -286,7 +289,7 @@ class _CameraPreviewWidgetState extends State<_CameraPreviewWidget> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MLMediaCubit, MLMediaState>(
-      builder: (context, state) {
+      builder: (context, mlState) {
         final cubit = context.read<MLMediaCubit>();
         final cameraController = cubit.cameraController;
 
@@ -318,6 +321,9 @@ class _CameraPreviewWidgetState extends State<_CameraPreviewWidget> {
 
         // Wrap CameraPreview in error handling
         return Builder(
+          key: ValueKey(
+            '${cameraController.description.name}_${mlState.timestamp?.millisecondsSinceEpoch}',
+          ),
           builder: (context) {
             try {
               // Double-check that controller is still valid before building preview
@@ -325,19 +331,87 @@ class _CameraPreviewWidgetState extends State<_CameraPreviewWidget> {
                 // Get the camera's aspect ratio to prevent squishing
                 final aspectRatio = cameraController.value.aspectRatio;
 
-                return AspectRatio(
-                  aspectRatio: aspectRatio,
-                  child: OverflowBox(
-                    alignment: Alignment.center,
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: cameraController.value.previewSize?.height ?? 1,
-                        height: cameraController.value.previewSize?.width ?? 1,
-                        child: CameraPreview(cameraController),
+                return BlocBuilder<FaceDetectionCubit, FaceDetectionState>(
+                  builder: (context, faceState) {
+                    return AspectRatio(
+                      aspectRatio: aspectRatio,
+                      child: Stack(
+                        children: [
+                          // Camera preview base
+                          OverflowBox(
+                            alignment: Alignment.center,
+                            child: FittedBox(
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                width:
+                                    cameraController
+                                        .value
+                                        .previewSize
+                                        ?.height ??
+                                    1,
+                                height:
+                                    cameraController.value.previewSize?.width ??
+                                    1,
+                                child: CameraPreview(cameraController),
+                              ),
+                            ),
+                          ),
+
+                          // Face detection overlay - REUSE existing FacePainter and FaceImageFilterOverlay
+                          if (faceState.liveCameraFaces?.isNotEmpty == true)
+                            Positioned.fill(
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final previewSize =
+                                      cameraController.value.previewSize;
+                                  if (previewSize == null) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  final containerSize = Size(
+                                    constraints.maxWidth,
+                                    constraints.maxHeight,
+                                  );
+
+                                  return Stack(
+                                    children: [
+                                      // Use specialized LiveCameraFacePainter for face detection overlay
+                                      CustomPaint(
+                                        painter: LiveCameraFacePainter(
+                                          faces: faceState.liveCameraFaces!,
+                                          cameraPreviewSize: Size(
+                                            previewSize.height,
+                                            previewSize.width,
+                                          ),
+                                          containerSize: containerSize,
+                                          showContours: faceState.showContours,
+                                          showLabels: faceState.showLabels,
+                                        ),
+                                        child: Container(),
+                                      ),
+
+                                      // Use specialized LiveCameraFilterOverlay for filters
+                                      if (faceState.selectedFilter !=
+                                          FaceFilterType.none)
+                                        LiveCameraFilterOverlay(
+                                          faces: faceState.liveCameraFaces!,
+                                          cameraPreviewSize: Size(
+                                            previewSize.height,
+                                            previewSize.width,
+                                          ),
+                                          containerSize: containerSize,
+                                          selectedFilter:
+                                              faceState.selectedFilter,
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 );
               } else {
                 return const Center(

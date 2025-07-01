@@ -163,6 +163,8 @@ class FilterPositionHelper {
 
     final noseBase = face.landmarks[FaceLandmarkType.noseBase];
     final bottomMouth = face.landmarks[FaceLandmarkType.bottomMouth];
+    final leftMouth = face.landmarks[FaceLandmarkType.leftMouth];
+    final rightMouth = face.landmarks[FaceLandmarkType.rightMouth];
 
     if (noseBase != null && bottomMouth != null) {
       final faceWidth = face.boundingBox.width;
@@ -175,12 +177,25 @@ class FilterPositionHelper {
           noseBase.position.y.toDouble() +
           (faceWidth * 0.05); // Just below nose
 
+      // Calculate rotation based on mouth corners for better accuracy
+      double rotation = 0;
+      if (leftMouth != null && rightMouth != null) {
+        final deltaX =
+            rightMouth.position.x.toDouble() - leftMouth.position.x.toDouble();
+        final deltaY =
+            rightMouth.position.y.toDouble() - leftMouth.position.y.toDouble();
+        rotation = math.atan2(deltaY, deltaX) * 180 / math.pi;
+      } else {
+        // Fallback to inverted headEulerAngleZ if mouth corners not available
+        rotation = -(face.headEulerAngleZ ?? 0);
+      }
+
       elements.add(
         FilterElement(
           type: FilterElementType.mustache,
           position: Offset(x, y),
           size: Size(mustacheWidth, mustacheHeight),
-          rotation: face.headEulerAngleZ ?? 0,
+          rotation: rotation,
         ),
       );
     }
@@ -283,21 +298,41 @@ class FilterPositionHelper {
     final elements = <FilterElement>[];
 
     final bottomMouth = face.landmarks[FaceLandmarkType.bottomMouth];
-    if (bottomMouth != null) {
+    final noseBase = face.landmarks[FaceLandmarkType.noseBase];
+    final leftMouth = face.landmarks[FaceLandmarkType.leftMouth];
+    final rightMouth = face.landmarks[FaceLandmarkType.rightMouth];
+
+    if (noseBase != null && bottomMouth != null) {
       final faceWidth = face.boundingBox.width;
-      final beardWidth = faceWidth * 0.7;
+      final beardWidth = faceWidth * 0.9;
       final beardHeight = beardWidth * 0.8;
 
-      // Position below mouth
+      final avgY =
+          (noseBase.position.y.toDouble() + bottomMouth.position.y.toDouble()) /
+          2;
+
       final x = bottomMouth.position.x.toDouble();
-      final y = bottomMouth.position.y.toDouble() + beardHeight * 0.3;
+      final y = avgY + beardHeight * 0.3;
+
+      // Calculate rotation based on mouth corners for better accuracy
+      double rotation = 0;
+      if (leftMouth != null && rightMouth != null) {
+        final deltaX =
+            rightMouth.position.x.toDouble() - leftMouth.position.x.toDouble();
+        final deltaY =
+            rightMouth.position.y.toDouble() - leftMouth.position.y.toDouble();
+        rotation = math.atan2(deltaY, deltaX) * 180 / math.pi;
+      } else {
+        // Fallback to inverted headEulerAngleZ if mouth corners not available
+        rotation = -(face.headEulerAngleZ ?? 0);
+      }
 
       elements.add(
         FilterElement(
           type: FilterElementType.beard,
           position: Offset(x, y),
           size: Size(beardWidth, beardHeight),
-          rotation: face.headEulerAngleZ ?? 0,
+          rotation: rotation,
         ),
       );
     }
