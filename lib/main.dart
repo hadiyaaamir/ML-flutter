@@ -29,18 +29,15 @@ class MLFoundationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flutter ML Hub'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
+      appBar: AppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          spacing: 16,
           children: [
-            // Header Section
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: const Column(
                 children: [
                   Icon(Icons.psychology, size: 80, color: Colors.deepPurple),
@@ -49,7 +46,7 @@ class MLFoundationScreen extends StatelessWidget {
                     'Flutter ML Hub',
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 4),
                   Text(
                     'Explore machine learning capabilities',
                     style: TextStyle(fontSize: 16, color: Colors.grey),
@@ -58,86 +55,77 @@ class MLFoundationScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
 
-            // Mini-Apps Section
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Available Applications',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Object Labelling App Tile
-            _buildAppTile(
-              context,
-              icon: Icons.label,
-              title: 'Object Labelling',
-              description: 'Detect and identify objects in images using AI',
-              color: Colors.purple,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ObjectLabellingPage(),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Barcode Scanner App Tile
-            _buildAppTile(
-              context,
-              icon: Icons.qr_code_scanner,
-              title: 'Barcode Scanner',
-              description: 'Scan QR codes and barcodes with live detection',
-              color: Colors.green,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const BarcodeScanningPage(),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Placeholder for future apps
-            _buildComingSoonTile(
-              context,
-              icon: Icons.face,
-              title: 'Face Detection',
-              description: 'Coming Soon',
-            ),
-
-            const SizedBox(height: 16),
-
-            _buildComingSoonTile(
-              context,
-              icon: Icons.text_fields,
-              title: 'Text Recognition',
-              description: 'Coming Soon',
-            ),
+            _Apps(),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildAppTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String description,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
+class _Apps extends StatelessWidget {
+  const _Apps();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      spacing: 8,
+      children: [
+        // Object Labelling App Tile
+        AppTile(
+          icon: Icons.label,
+          title: 'Object Labelling',
+          description: 'Detect and identify objects in images using AI',
+          color: Colors.purple,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ObjectLabellingPage(),
+              ),
+            );
+          },
+        ),
+
+        // Barcode Scanner App Tile
+        AppTile(
+          icon: Icons.qr_code_scanner,
+          title: 'Barcode Scanner',
+          description: 'Scan QR codes and barcodes with live detection',
+          color: Colors.green,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BarcodeScanningPage(),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class AppTile extends StatelessWidget {
+  const AppTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       elevation: 2,
       child: InkWell(
@@ -185,57 +173,6 @@ class MLFoundationScreen extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildComingSoonTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    return Card(
-      elevation: 1,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 32, color: Colors.grey.shade400),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade500,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
