@@ -208,10 +208,21 @@ class MLMediaCubit extends Cubit<MLMediaState> {
     if (!state.isLiveCameraActive) return;
 
     try {
+      // Emit loading state to show camera is switching
+      emit(state.copyWith(mlMediaDataState: DataState.loading()));
+
       await _cameraStreamSubscription?.cancel();
       _cameraStreamSubscription = null;
 
       await _mlMediaService.switchCamera();
+
+      // Emit success state to trigger UI rebuild with new camera
+      emit(
+        state.copyWith(
+          mlMediaDataState: DataState.loaded(),
+          timestamp: DateTime.now(), // Update timestamp to force rebuild
+        ),
+      );
 
       // Camera stream handling will be done by the specific ML module
     } catch (e) {

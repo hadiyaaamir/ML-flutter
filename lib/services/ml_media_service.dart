@@ -127,6 +127,12 @@ class MLMediaService {
   /// Get available cameras
   List<CameraDescription> get availableCameras => _cameraService.cameras;
 
+  /// Check if front camera is available
+  bool get hasFrontCamera => _cameraService.hasFrontCamera;
+
+  /// Check if back camera is available
+  bool get hasBackCamera => _cameraService.hasBackCamera;
+
   // ML-Specific Utility Methods
 
   /// Start camera with ML-optimized settings for object detection

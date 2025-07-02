@@ -44,8 +44,23 @@ class CameraService {
         (camera) => camera.lensDirection == CameraLensDirection.front,
       );
     } catch (e) {
+      debugPrint('Front camera not available: $e');
       return null; // Front camera might not be available
     }
+  }
+
+  /// Check if front camera is available
+  bool get hasFrontCamera {
+    return _cameras.any(
+      (camera) => camera.lensDirection == CameraLensDirection.front,
+    );
+  }
+
+  /// Check if back camera is available
+  bool get hasBackCamera {
+    return _cameras.any(
+      (camera) => camera.lensDirection == CameraLensDirection.back,
+    );
   }
 
   /// Initialize camera service
@@ -142,11 +157,28 @@ class CameraService {
               ? CameraLensDirection.front
               : CameraLensDirection.back;
 
+      // Check if the target camera is available
+      final targetCamera =
+          _cameras
+              .where((cam) => cam.lensDirection == newLensDirection)
+              .firstOrNull;
+
+      if (targetCamera == null) {
+        throw Exception(
+          newLensDirection == CameraLensDirection.front
+              ? 'Front camera not available on this device'
+              : 'Back camera not available on this device',
+        );
+      }
+
       final wasStreamingActive = _imageStreamController != null;
       final currentResolution = _controller!.resolutionPreset;
 
       // Stop current camera
       await stopCamera();
+
+      // Add a small delay to ensure cleanup is complete
+      await Future.delayed(const Duration(milliseconds: 100));
 
       // Start with new lens direction
       await startCamera(

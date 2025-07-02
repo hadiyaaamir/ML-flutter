@@ -123,8 +123,11 @@ class _CameraPreviewWidgetState extends State<_CameraPreviewWidget> {
           );
         }
 
-        // Wrap CameraPreview in error handling
+        // Wrap CameraPreview in error handling and use a key to force rebuild on camera switch
         return Builder(
+          key: ValueKey(
+            '${cameraController.description.name}_${state.timestamp?.millisecondsSinceEpoch}',
+          ),
           builder: (context) {
             try {
               // Double-check that controller is still valid before building preview

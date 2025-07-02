@@ -6,10 +6,7 @@ class BarcodeScanningView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Barcode Scanner'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
+      appBar: AppBar(title: const Text('Barcode Scanner'), centerTitle: true),
       body: BlocBuilder<BarcodeScanningCubit, BarcodeScanningState>(
         builder: (context, state) {
           return SingleChildScrollView(

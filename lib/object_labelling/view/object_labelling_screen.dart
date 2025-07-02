@@ -8,7 +8,7 @@ class ObjectLabellingView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Object Labelling'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        centerTitle: true,
         actions: const [_ClearResultsButton()],
       ),
       body: BlocConsumer<ObjectLabellingCubit, ObjectLabellingState>(

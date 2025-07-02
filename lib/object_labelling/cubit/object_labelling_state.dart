@@ -2,10 +2,7 @@ part of 'object_labelling_cubit.dart';
 
 typedef ObjectLabellingDataState = DataState<List<LabelResult>>;
 
-enum ObjectLabellingMode {
-  static, // Single image processing
-  live, // Live camera streaming
-}
+enum ObjectLabellingMode { static, live }
 
 class ObjectLabellingState extends Equatable {
   const ObjectLabellingState({
