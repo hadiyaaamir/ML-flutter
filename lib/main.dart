@@ -3,6 +3,7 @@ import 'package:ml_flutter/face_detection/view/view.dart';
 import 'package:ml_flutter/object_labelling/object_labelling.dart';
 import 'package:ml_flutter/barcode_scanning/barcode_scanning.dart';
 import 'package:ml_flutter/object_detection/object_detection.dart';
+import 'package:ml_flutter/text_recognition/text_recognition.dart';
 
 void main() {
   runApp(const MyApp());
@@ -108,6 +109,15 @@ class _Apps extends StatelessWidget {
           description: 'Identify and classify objects in images',
           color: Colors.orange,
           onTap: () => Navigator.push(context, ObjectDetectionPage.route()),
+        ),
+
+        // Text Recognition
+        AppTile(
+          icon: Icons.text_fields,
+          title: 'Text Recognition',
+          description: 'Extract and recognize text from images using OCR',
+          color: Colors.teal,
+          onTap: () => Navigator.push(context, TextRecognitionPage.route()),
         ),
       ],
     );
