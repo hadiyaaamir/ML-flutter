@@ -4,6 +4,7 @@ import 'package:ml_flutter/object_labelling/object_labelling.dart';
 import 'package:ml_flutter/barcode_scanning/barcode_scanning.dart';
 import 'package:ml_flutter/object_detection/object_detection.dart';
 import 'package:ml_flutter/text_recognition/text_recognition.dart';
+import 'package:ml_flutter/pose_detection/pose_detection.dart';
 
 void main() {
   runApp(const MyApp());
@@ -118,6 +119,21 @@ class _Apps extends StatelessWidget {
           description: 'Extract and recognize text from images using OCR',
           color: Colors.teal,
           onTap: () => Navigator.push(context, TextRecognitionPage.route()),
+        ),
+
+        // Pose Detection
+        AppTile(
+          icon: Icons.accessibility_new,
+          title: 'Pose Detection',
+          description: 'Detect human poses and body landmarks in images',
+          color: Colors.deepPurple,
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PoseDetectionPage(),
+                ),
+              ),
         ),
       ],
     );
