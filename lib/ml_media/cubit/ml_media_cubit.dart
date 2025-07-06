@@ -56,8 +56,8 @@ class MLMediaCubit extends Cubit<MLMediaState> {
       if (image != null) {
         emit(
           state.copyWith(
-            image: image,
-            timestamp: DateTime.now(),
+            image: () => image,
+            timestamp: () => DateTime.now(),
             mlMediaDataState: DataState.loaded(data: image),
           ),
         );
@@ -100,8 +100,8 @@ class MLMediaCubit extends Cubit<MLMediaState> {
       if (image != null) {
         emit(
           state.copyWith(
-            image: image,
-            timestamp: DateTime.now(),
+            image: () => image,
+            timestamp: () => DateTime.now(),
             mlMediaDataState: DataState.loaded(data: image),
           ),
         );
@@ -133,7 +133,11 @@ class MLMediaCubit extends Cubit<MLMediaState> {
       } else {
         await stopLiveCamera();
         emit(
-          state.copyWith(mode: MLMediaMode.static, isLiveCameraActive: false),
+          state.copyWith(
+            mode: MLMediaMode.static,
+            isLiveCameraActive: false,
+            image: () => null, // Clear image when switching to static mode
+          ),
         );
       }
     } catch (e) {
@@ -163,6 +167,7 @@ class MLMediaCubit extends Cubit<MLMediaState> {
         state.copyWith(
           mlMediaDataState: DataState.loading(),
           mode: MLMediaMode.live,
+          image: () => null, // Clear image when switching to live mode
         ),
       );
 
@@ -220,7 +225,7 @@ class MLMediaCubit extends Cubit<MLMediaState> {
       emit(
         state.copyWith(
           mlMediaDataState: DataState.loaded(),
-          timestamp: DateTime.now(), // Update timestamp to force rebuild
+          timestamp: () => DateTime.now(), // Update timestamp to force rebuild
         ),
       );
 

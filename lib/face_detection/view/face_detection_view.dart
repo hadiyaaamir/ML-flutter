@@ -7,10 +7,7 @@ class FaceDetectionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Face Detection'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
+      appBar: AppBar(title: const Text('Face Detection'), centerTitle: true),
       body: BlocBuilder<FaceDetectionCubit, FaceDetectionState>(
         builder: (context, state) {
           return SingleChildScrollView(

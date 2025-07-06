@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ml_flutter/face_detection/view/view.dart';
 import 'package:ml_flutter/object_labelling/object_labelling.dart';
 import 'package:ml_flutter/barcode_scanning/barcode_scanning.dart';
+import 'package:ml_flutter/object_detection/object_detection.dart';
 
 void main() {
   runApp(const MyApp());
@@ -98,6 +99,15 @@ class _Apps extends StatelessWidget {
           description: 'Detect and identify faces in images using AI',
           color: Colors.blue,
           onTap: () => Navigator.push(context, FaceDetectionPage.route()),
+        ),
+
+        // Object Classification
+        AppTile(
+          icon: Icons.filter_center_focus_outlined,
+          title: 'Object Classification',
+          description: 'Identify and classify objects in images',
+          color: Colors.orange,
+          onTap: () => Navigator.push(context, ObjectDetectionPage.route()),
         ),
       ],
     );

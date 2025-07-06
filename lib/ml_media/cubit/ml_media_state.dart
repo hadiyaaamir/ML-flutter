@@ -40,17 +40,17 @@ class MLMediaState extends Equatable {
   /// Create a copy of this state with updated values
   MLMediaState copyWith({
     MLMediaMode? mode,
-    File? image,
+    File? Function()? image,
     bool? isLiveCameraActive,
     DataState? mlMediaDataState,
-    DateTime? timestamp,
+    DateTime? Function()? timestamp,
   }) {
     return MLMediaState(
       mode: mode ?? this.mode,
-      image: image,
+      image: image != null ? image() : this.image,
       isLiveCameraActive: isLiveCameraActive ?? this.isLiveCameraActive,
       mlMediaDataState: mlMediaDataState ?? this.mlMediaDataState,
-      timestamp: timestamp ?? this.timestamp,
+      timestamp: timestamp != null ? timestamp() : this.timestamp,
     );
   }
 
