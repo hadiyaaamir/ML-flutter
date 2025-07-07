@@ -3,9 +3,7 @@
 A comprehensive Flutter application showcasing powerful machine learning implementations in Flutter for real-time computer vision, text recognition, and language translation.
 
 ## 🎥 Demo Video
-
-> **Coming Soon!** 📹  
-> *Space reserved for app demonstration video*
+https://github.com/user-attachments/assets/a245ead5-7528-4b12-800e-0b963e3378ca
 
 ---
 
