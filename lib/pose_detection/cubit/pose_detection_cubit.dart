@@ -44,7 +44,7 @@ class PoseDetectionCubit extends Cubit<PoseDetectionState> {
 
       _isInitialized = true;
       emit(state.copyWith(poseDetectionDataState: DataState.initial()));
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       emit(
         state.copyWith(
           poseDetectionDataState: state.poseDetectionDataState.toFailure(
@@ -202,7 +202,7 @@ class PoseDetectionCubit extends Cubit<PoseDetectionState> {
           ),
         ),
       );
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       emit(
         state.copyWith(
           poseDetectionDataState: state.poseDetectionDataState.toFailure(

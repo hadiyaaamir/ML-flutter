@@ -48,7 +48,11 @@ class TextTranslationView extends StatelessWidget {
   void _showModelManagementDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => _ModelManagementDialog(),
+      builder:
+          (dialogContext) => BlocProvider.value(
+            value: context.read<TextTranslationCubit>(),
+            child: _ModelManagementDialog(),
+          ),
     );
   }
 }
@@ -791,6 +795,7 @@ class _ModelManagementDialogState extends State<_ModelManagementDialog> {
                           );
 
                           return ListTile(
+                            contentPadding: EdgeInsets.zero,
                             leading: Text(language.flagEmoji),
                             title: Text(language.displayName),
                             trailing:

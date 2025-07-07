@@ -34,35 +34,39 @@ class MLFoundationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          spacing: 16,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: const Column(
-                children: [
-                  Icon(Icons.psychology, size: 80, color: Colors.deepPurple),
-                  SizedBox(height: 16),
-                  Text(
-                    'Flutter ML Hub',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Explore machine learning capabilities',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            spacing: 16,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: const Column(
+                  children: [
+                    Icon(Icons.psychology, size: 80, color: Colors.deepPurple),
+                    SizedBox(height: 16),
+                    Text(
+                      'Flutter ML Hub',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Explore machine learning capabilities',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            _Apps(),
-          ],
+              Expanded(child: _Apps()),
+            ],
+          ),
         ),
       ),
     );
@@ -74,82 +78,87 @@ class _Apps extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      spacing: 8,
+    return ListView(
       children: [
-        // Object Labelling
-        AppTile(
-          icon: Icons.label,
-          title: 'Object Labelling',
-          description: 'Detect and identify objects in images using AI',
-          color: Colors.purple,
-          onTap: () => Navigator.push(context, ObjectLabellingPage.route()),
-        ),
+        Column(
+          spacing: 8,
+          children: [
+            // Object Labelling
+            AppTile(
+              icon: Icons.label,
+              title: 'Object Labelling',
+              description: 'Detect and identify objects in images using AI',
+              color: Colors.purple,
+              onTap: () => Navigator.push(context, ObjectLabellingPage.route()),
+            ),
 
-        // Barcode Scanner
-        AppTile(
-          icon: Icons.qr_code_scanner,
-          title: 'Barcode Scanner',
-          description: 'Scan QR codes and barcodes with live detection',
-          color: Colors.green,
-          onTap: () => Navigator.push(context, BarcodeScanningPage.route()),
-        ),
+            // Barcode Scanner
+            AppTile(
+              icon: Icons.qr_code_scanner,
+              title: 'Barcode Scanner',
+              description: 'Scan QR codes and barcodes with live detection',
+              color: Colors.green,
+              onTap: () => Navigator.push(context, BarcodeScanningPage.route()),
+            ),
 
-        // Face Detection
-        AppTile(
-          icon: Icons.face,
-          title: 'Face Detection',
-          description: 'Detect and identify faces in images using AI',
-          color: Colors.blue,
-          onTap: () => Navigator.push(context, FaceDetectionPage.route()),
-        ),
+            // Face Detection
+            AppTile(
+              icon: Icons.face,
+              title: 'Face Detection',
+              description: 'Detect and identify faces in images using AI',
+              color: Colors.blue,
+              onTap: () => Navigator.push(context, FaceDetectionPage.route()),
+            ),
 
-        // Object Classification
-        AppTile(
-          icon: Icons.filter_center_focus_outlined,
-          title: 'Object Classification',
-          description: 'Identify and classify objects in images',
-          color: Colors.orange,
-          onTap: () => Navigator.push(context, ObjectDetectionPage.route()),
-        ),
+            // Object Classification
+            AppTile(
+              icon: Icons.filter_center_focus_outlined,
+              title: 'Object Classification',
+              description: 'Identify and classify objects in images',
+              color: Colors.orange,
+              onTap: () => Navigator.push(context, ObjectDetectionPage.route()),
+            ),
 
-        // Text Recognition
-        AppTile(
-          icon: Icons.text_fields,
-          title: 'Text Recognition',
-          description: 'Extract and recognize text from images using OCR',
-          color: Colors.teal,
-          onTap: () => Navigator.push(context, TextRecognitionPage.route()),
-        ),
+            // Text Recognition
+            AppTile(
+              icon: Icons.text_fields,
+              title: 'Text Recognition',
+              description: 'Extract and recognize text from images using OCR',
+              color: Colors.teal,
+              onTap: () => Navigator.push(context, TextRecognitionPage.route()),
+            ),
 
-        // Pose Detection
-        AppTile(
-          icon: Icons.accessibility_new,
-          title: 'Pose Detection',
-          description: 'Detect human poses and body landmarks in images',
-          color: Colors.deepPurple,
-          onTap:
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PoseDetectionPage(),
-                ),
-              ),
-        ),
+            // Pose Detection
+            AppTile(
+              icon: Icons.accessibility_new,
+              title: 'Pose Detection',
+              description: 'Detect human poses and body landmarks in images',
+              color: Colors.deepPurple,
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PoseDetectionPage(),
+                    ),
+                  ),
+            ),
 
-        // Text Translation
-        AppTile(
-          icon: Icons.translate,
-          title: 'Text Translation',
-          description: 'Translate text between languages using offline models',
-          color: Colors.indigo,
-          onTap:
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TextTranslationPage(),
-                ),
-              ),
+            // Text Translation
+            AppTile(
+              icon: Icons.translate,
+              title: 'Text Translation',
+              description:
+                  'Translate text between languages using offline models',
+              color: Colors.indigo,
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TextTranslationPage(),
+                    ),
+                  ),
+            ),
+          ],
         ),
       ],
     );

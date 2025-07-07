@@ -48,7 +48,7 @@ class TextRecognitionCubit extends Cubit<TextRecognitionState> {
 
       _isInitialized = true;
       emit(state.copyWith(textRecognitionDataState: DataState.initial()));
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       emit(
         state.copyWith(
           textRecognitionDataState: state.textRecognitionDataState.toFailure(
@@ -222,7 +222,7 @@ class TextRecognitionCubit extends Cubit<TextRecognitionState> {
           ),
         ),
       );
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       emit(
         state.copyWith(
           textRecognitionDataState: state.textRecognitionDataState.toFailure(

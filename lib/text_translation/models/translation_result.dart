@@ -222,8 +222,6 @@ class TranslationResult extends Equatable {
         return 'Vietnamese';
       case TranslateLanguage.chinese:
         return 'Chinese';
-      default:
-        return language.name.toUpperCase();
     }
   }
 }
@@ -325,17 +323,9 @@ class TranslationLanguages {
 
 /// Represents a language option in the dropdown (either a specific language or detect option)
 class LanguageOption extends Equatable {
-  const LanguageOption._({
-    required this.isDetectOption,
-    this.language,
-    required this.displayName,
-    required this.flagEmoji,
-  });
-
   /// Create a specific language option
-  const LanguageOption.language(TranslateLanguage language)
+  const LanguageOption.language(TranslateLanguage this.language)
     : isDetectOption = false,
-      language = language,
       displayName = null,
       flagEmoji = null;
 

@@ -57,7 +57,7 @@ class ObjectDetectionCubit extends Cubit<ObjectDetectionState> {
 
       _isInitialized = true;
       emit(state.copyWith(objectDetectionDataState: DataState.initial()));
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       emit(
         state.copyWith(
           objectDetectionDataState: state.objectDetectionDataState.toFailure(
@@ -229,7 +229,7 @@ class ObjectDetectionCubit extends Cubit<ObjectDetectionState> {
           ),
         ),
       );
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       emit(
         state.copyWith(
           objectDetectionDataState: state.objectDetectionDataState.toFailure(
