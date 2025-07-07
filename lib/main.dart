@@ -5,6 +5,7 @@ import 'package:ml_flutter/barcode_scanning/barcode_scanning.dart';
 import 'package:ml_flutter/object_detection/object_detection.dart';
 import 'package:ml_flutter/text_recognition/text_recognition.dart';
 import 'package:ml_flutter/pose_detection/pose_detection.dart';
+import 'package:ml_flutter/text_translation/text_translation.dart';
 
 void main() {
   runApp(const MyApp());
@@ -132,6 +133,21 @@ class _Apps extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const PoseDetectionPage(),
+                ),
+              ),
+        ),
+
+        // Text Translation
+        AppTile(
+          icon: Icons.translate,
+          title: 'Text Translation',
+          description: 'Translate text between languages using offline models',
+          color: Colors.indigo,
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TextTranslationPage(),
                 ),
               ),
         ),
