@@ -5,7 +5,6 @@ A comprehensive Flutter application showcasing powerful machine learning impleme
 ## 🎥 Demo Video
 https://github.com/user-attachments/assets/a245ead5-7528-4b12-800e-0b963e3378ca
 
----
 
 ## ✨ Features
 
@@ -45,7 +44,7 @@ https://github.com/user-attachments/assets/a245ead5-7528-4b12-800e-0b963e3378ca
 - **Real-time character and word counting**
 - **Copy translation results** to clipboard
 
----
+
 ## 🚀 Future Roadmap
 
 - [ ] **Custom model training** integration
