@@ -173,7 +173,7 @@ class _MessageInputCardState extends State<_MessageInputCard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -349,7 +349,7 @@ class _MessageBubble extends StatelessWidget {
           if (!message.isLocalUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.orange.withOpacity(0.2),
+              backgroundColor: Colors.orange.withValues(alpha: 0.2),
               child: const Icon(
                 Icons.person_outline,
                 size: 16,
@@ -378,7 +378,7 @@ class _MessageBubble extends StatelessWidget {
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.blue.withOpacity(0.2),
+              backgroundColor: Colors.blue.withValues(alpha: 0.2),
               child: const Icon(Icons.person, size: 16, color: Colors.blue),
             ),
           ],
@@ -442,7 +442,7 @@ class _SmartReplySuggestionsChips extends StatelessWidget {
                               isLocalUser: true,
                             );
                           },
-                          backgroundColor: Colors.blue.withOpacity(0.1),
+                          backgroundColor: Colors.blue.withValues(alpha: 0.1),
                           labelStyle: const TextStyle(color: Colors.blue),
                           side: const BorderSide(color: Colors.blue),
                         );
